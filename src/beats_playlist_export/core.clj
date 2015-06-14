@@ -1,8 +1,15 @@
-(ns beats-playlist-dl.core
-  (:require [beats-clj.core :as beats]))
+(ns beats-playlist-export.core
+  (:require [beats-clj.core :as beats])
+  (:gen-class :main true))
 
-(beats/set-app-key! "REPLACE ME!!!!")
-(beats/set-app-secret! "REPLACE ME!!!!")
+(defn get-param [n d]
+  (let [system_env (System/getenv n)
+        system_prop (System/getProperty n)]
+    (if-let [param (if system_env system_env system_prop)]
+      param
+      (do
+        (println (str "Server " n " parameter not set! Defaulting to " d))
+        d))))
 
 (defn get-tracks [tracks]
   (map #(let [track-meta (beats/track-get (:id %))]
@@ -27,3 +34,14 @@
          (map #(assoc-in % [:refs :tracks] (get-tracks (get-in % [:refs :tracks]))))
          (write-file outfile))
     (println (str "Complete. Output File: " outfile))))
+
+(defn -main
+  [& args]
+  (let [beats-api-token (get-param "BEATS_API_TOKEN" false)
+        outdir (get-param "OUTDIR" "/tmp")]
+    (beats/set-app-key! (get-param "BEATS_API_KEY" false))
+    (beats/set-app-secret! (get-param "BEATS_API_SECRET" false))
+    (if (empty? outdir)
+        (println "Please specify your output directory via the OUTDIR param.")
+        (start beats-api-token :outdir outdir))
+    (shutdown-agents)))
