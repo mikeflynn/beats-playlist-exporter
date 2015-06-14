@@ -12,7 +12,7 @@
         d))))
 
 (defn get-tracks [tracks]
-  (map #(let [track-meta (beats/track-get (:id %))]
+  (map #(let [track-meta (try (beats/track-get (:id %)) (catch Exception e {}))]
           (assoc % :artist (get-in track-meta [:data :artist_display_name])
                    :title (get-in track-meta [:data :title]))) tracks))
 
